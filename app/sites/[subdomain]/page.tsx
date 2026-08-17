@@ -5,12 +5,18 @@ export default async function SitePage({ params }: { params: Promise<{ subdomain
   const { subdomain } = await params;
   const supabase = await createClient();
 
-  // Query site based on subdomain
-  const { data: site, error: siteError } = await supabase
-    .from('sites')
-    .select('*, site_content(*)')
-    .eq('subdomain', subdomain)
-    .single();
+  // Determine if we are searching by custom_domain or subdomain
+  const isCustomDomain = subdomain.includes('.');
+  
+  // Query site based on subdomain or custom_domain
+  let query = supabase.from('sites').select('*, site_content(*)');
+  if (isCustomDomain) {
+    query = query.eq('custom_domain', subdomain);
+  } else {
+    query = query.eq('subdomain', subdomain);
+  }
+  
+  const { data: site, error: siteError } = await query.single();
 
   if (siteError || !site) {
     return notFound();

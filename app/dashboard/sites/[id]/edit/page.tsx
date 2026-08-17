@@ -60,6 +60,12 @@ export default async function EditSitePage({ params }: { params: Promise<{ id: s
               View Live
             </a>
           )}
+          <Link
+            href={`/dashboard/sites/${site.id}/settings`}
+            className="inline-flex items-center px-4 py-2 bg-white border border-zinc-200 text-sm font-medium rounded-xl hover:bg-zinc-50 transition-colors shadow-sm"
+          >
+            Settings
+          </Link>
           <form action={toggleStatusAction}>
             <button 
               type="submit"
