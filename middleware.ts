@@ -24,13 +24,23 @@ export async function middleware(req: NextRequest) {
   // Get the root domain from env
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000';
 
-  // Extract subdomain: if hostname is "sub.localhost:3000", currentHost becomes "sub"
-  let currentHost = hostname.replace(`.${rootDomain}`, '');
+  // Extract current host for routing
+  let currentHost = hostname;
 
-  // If we are on local, we might get just 'localhost:3000' which becomes 'localhost:3000'
-  if (currentHost === rootDomain || currentHost === hostname) {
+  // If the request is for the main application root domain (e.g. scrolltubes.xyz)
+  if (hostname === rootDomain) {
+    currentHost = '';
+  } 
+  // If the request is a subdomain of the main root domain (e.g. sub.scrolltubes.xyz)
+  else if (hostname.endsWith(`.${rootDomain}`)) {
+    currentHost = hostname.replace(`.${rootDomain}`, '');
+  }
+  // If the request is localhost:3000
+  else if (hostname === 'localhost:3000' || hostname === '127.0.0.1:3000') {
     currentHost = '';
   }
+  // Otherwise, it's a custom domain or a user's root domain (e.g. odivpds.my.id or sub.odivpds.my.id)
+  // In this case, we leave currentHost as the full hostname, and the middleware will rewrite it to /sites/hostname
 
   // Update supabase session (standard SSR middleware)
   const { supabaseResponse } = await updateSession(req);
