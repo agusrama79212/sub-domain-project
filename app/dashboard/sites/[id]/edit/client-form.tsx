@@ -162,18 +162,16 @@ export function EditSiteForm({
             
             <label className="relative cursor-pointer inline-flex items-center px-6 py-3 bg-black text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 transition-colors">
               <span>Select Folder</span>
-              {/* @ts-ignore - webkitdirectory is non-standard but supported in all modern browsers */}
               <input 
                 ref={fileInputRef}
                 type="file" 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                webkitdirectory="true" 
-                directory="true"
                 multiple 
                 onChange={() => {
                   setUploadProgress(0)
                   setUploadSuccess(false)
                 }}
+                {...{webkitdirectory: "true", directory: "true"} as any}
               />
             </label>
 
