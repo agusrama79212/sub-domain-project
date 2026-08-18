@@ -86,7 +86,7 @@ export default async function EditSitePage({ params }: { params: Promise<{ id: s
            </div>
         </div>
 
-        <EditSiteForm contentData={contentData} saveContentAction={saveContentAction} />
+        <EditSiteForm siteId={site.id} contentData={contentData} saveContentAction={saveContentAction} />
       </div>
     </div>
   )

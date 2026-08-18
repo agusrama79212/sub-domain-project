@@ -43,12 +43,46 @@ export async function middleware(req: NextRequest) {
   // In this case, we leave currentHost as the full hostname, and the middleware will rewrite it to /sites/hostname
 
   // Update supabase session (standard SSR middleware)
-  const { supabaseResponse } = await updateSession(req);
+  const { supabaseResponse, supabase } = await updateSession(req);
 
   // rewrites for app pages
   if (currentHost && currentHost !== 'www') {
-    // Rewrite to /sites/[hostname] so the page can parse subdomain + root_domain
-    const rewriteResponse = NextResponse.rewrite(new URL(`/sites/${hostname}${url.pathname}`, req.url));
+    let mode = 'template';
+    
+    // Attempt to fetch mode from DB for custom host routing
+    // First try custom_domain
+    let { data: site } = await supabase.from('sites').select('id, site_content(content_json)').eq('custom_domain', currentHost).single();
+    
+    if (!site) {
+      // Try subdomain + root_domain
+      let sub = currentHost;
+      let root = rootDomain;
+      const parts = currentHost.split('.');
+      if (parts.length > 1 && !currentHost.includes('localhost')) {
+        sub = parts[0];
+        root = parts.slice(1).join('.');
+      } else if (currentHost.includes('localhost')) {
+        sub = currentHost.replace('.localhost:3000', '');
+        root = rootDomain;
+      }
+      
+      const { data: fallbackSite } = await supabase.from('sites').select('id, site_content(content_json)').eq('subdomain', sub).eq('root_domain', root).single();
+      site = fallbackSite;
+    }
+
+    if (site && site.site_content) {
+      const content = Array.isArray(site.site_content) ? site.site_content[0] : site.site_content;
+      mode = content?.content_json?.mode || 'template';
+    }
+
+    let rewriteResponse;
+    if (mode === 'upload') {
+       // Route to a special file serving API
+       rewriteResponse = NextResponse.rewrite(new URL(`/api/serve-upload?site_id=${site?.id}&path=${url.pathname}`, req.url));
+    } else {
+       // Normal react component rendering
+       rewriteResponse = NextResponse.rewrite(new URL(`/sites/${hostname}${url.pathname}`, req.url));
+    }
     
     // Copy cookies from supabaseResponse to rewriteResponse so Auth stays intact
     supabaseResponse.cookies.getAll().forEach(cookie => {
