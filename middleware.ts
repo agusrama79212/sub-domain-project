@@ -37,10 +37,8 @@ export async function middleware(req: NextRequest) {
 
   // rewrites for app pages
   if (currentHost && currentHost !== 'www') {
-    // Determine if it's a subdomain or a custom domain
-    // If currentHost has a dot, it's a custom domain (e.g. 'toko.com')
-    // If it doesn't, it's a subdomain (e.g. 'toko')
-    const rewriteResponse = NextResponse.rewrite(new URL(`/sites/${currentHost}${url.pathname}`, req.url));
+    // Rewrite to /sites/[hostname] so the page can parse subdomain + root_domain
+    const rewriteResponse = NextResponse.rewrite(new URL(`/sites/${hostname}${url.pathname}`, req.url));
     
     // Copy cookies from supabaseResponse to rewriteResponse so Auth stays intact
     supabaseResponse.cookies.getAll().forEach(cookie => {

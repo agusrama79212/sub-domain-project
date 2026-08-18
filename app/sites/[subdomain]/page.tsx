@@ -5,18 +5,42 @@ export default async function SitePage({ params }: { params: Promise<{ subdomain
   const { subdomain } = await params;
   const supabase = await createClient();
 
-  // Determine if we are searching by custom_domain or subdomain
-  const isCustomDomain = subdomain.includes('.');
+  // Note: due to our middleware rewrite, params.subdomain actually contains the full hostname
+  // e.g. "toko.odivpds.my.id", "toko.scrolltubes.xyz", or "toko-baju.com"
+  const hostname = subdomain;
   
-  // Query site based on subdomain or custom_domain
-  let query = supabase.from('sites').select('*, site_content(*)');
-  if (isCustomDomain) {
-    query = query.eq('custom_domain', subdomain);
-  } else {
-    query = query.eq('subdomain', subdomain);
+  // 1. Try to find by custom_domain (legacy Phase 7 feature)
+  let { data: site, error: siteError } = await supabase
+    .from('sites')
+    .select('*, site_content(*)')
+    .eq('custom_domain', hostname)
+    .single();
+
+  // 2. If not found by custom_domain, try finding by subdomain + root_domain (Phase 7.5 feature)
+  if (!site) {
+    let sub = hostname;
+    let root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000';
+    
+    // Extract subdomain and root domain
+    const parts = hostname.split('.');
+    if (parts.length > 1 && !hostname.includes('localhost')) {
+      sub = parts[0];
+      root = parts.slice(1).join('.');
+    } else if (hostname.includes('localhost')) {
+      sub = hostname.replace('.localhost:3000', '');
+      root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000';
+    }
+
+    const { data: fallbackSite, error: fallbackError } = await supabase
+      .from('sites')
+      .select('*, site_content(*)')
+      .eq('subdomain', sub)
+      .eq('root_domain', root)
+      .single();
+      
+    site = fallbackSite;
+    siteError = fallbackError;
   }
-  
-  const { data: site, error: siteError } = await query.single();
 
   if (siteError || !site) {
     return notFound();

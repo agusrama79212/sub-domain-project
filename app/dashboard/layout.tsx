@@ -41,6 +41,10 @@ export default async function DashboardLayout({
               <LayoutDashboard className="w-5 h-5 mr-3 text-zinc-500" />
               Dashboard
             </Link>
+            <Link href="/dashboard/domains" className="flex items-center px-3 py-2.5 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-lg font-medium transition-colors">
+              <Globe className="w-5 h-5 mr-3 text-zinc-400" />
+              My Domains
+            </Link>
             <Link href="/dashboard/settings" className="flex items-center px-3 py-2.5 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-lg font-medium transition-colors">
               <Settings className="w-5 h-5 mr-3 text-zinc-400" />
               Settings

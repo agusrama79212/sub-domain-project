@@ -1,33 +1,22 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { checkAvailability, createSite } from '../actions'
-import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { NewSiteForm } from './client-form'
+import { redirect } from 'next/navigation'
 
-export default function NewSitePage() {
-  const [subdomain, setSubdomain] = useState('')
-  const [isChecking, setIsChecking] = useState(false)
-  const [status, setStatus] = useState<{ available?: boolean; reason?: string } | null>(null)
+export default async function NewSitePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (subdomain.length >= 3) {
-        setIsChecking(true)
-        const res = await checkAvailability(subdomain.toLowerCase())
-        setStatus(res)
-        setIsChecking(false)
-      } else if (subdomain.length > 0) {
-        setStatus({ available: false, reason: 'Subdomain must be at least 3 characters long.' })
-      } else {
-        setStatus(null)
-      }
-    }, 500) // 500ms debounce
+  if (!user) {
+    redirect('/login')
+  }
 
-    return () => clearTimeout(timer)
-  }, [subdomain])
-
-  const isFormValid = status?.available && subdomain.length >= 3
+  // Get user's verified domains
+  const { data: domains } = await supabase
+    .from('user_domains')
+    .select('id, domain')
+    .eq('owner_id', user.id)
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -41,75 +30,7 @@ export default function NewSitePage() {
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm shadow-zinc-100/50">
-        <form action={createSite} className="space-y-6">
-          
-          <div>
-            <label htmlFor="title" className="block text-sm font-semibold text-zinc-900 mb-2">
-              Website Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              required
-              className="block w-full rounded-xl border border-zinc-300 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:border-black focus:ring-black sm:text-sm transition-colors"
-              placeholder="e.g. My Portfolio"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="subdomain" className="block text-sm font-semibold text-zinc-900 mb-2">
-              Subdomain
-            </label>
-            <div className="flex mt-1">
-              <input
-                type="text"
-                name="subdomain"
-                id="subdomain"
-                required
-                value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="block w-full rounded-l-xl border border-zinc-300 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:border-black focus:ring-black sm:text-sm transition-colors"
-                placeholder="your-name"
-              />
-              <span className="inline-flex items-center px-4 rounded-r-xl border border-l-0 border-zinc-300 bg-zinc-50 text-zinc-500 sm:text-sm font-medium">
-                .{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}
-              </span>
-            </div>
-            
-            <div className="mt-3 h-5 flex items-center text-sm">
-              {isChecking && (
-                <div className="flex items-center text-zinc-500">
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Checking availability...
-                </div>
-              )}
-              {!isChecking && status && (
-                <div className={`flex items-center font-medium ${status.available ? 'text-green-600' : 'text-red-500'}`}>
-                  {status.available ? (
-                    <><CheckCircle2 className="w-4 h-4 mr-1.5" /> Subdomain is available!</>
-                  ) : (
-                    <><XCircle className="w-4 h-4 mr-1.5" /> {status.reason}</>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-zinc-100">
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all ${
-                isFormValid ? 'bg-black hover:bg-zinc-800' : 'bg-zinc-300 cursor-not-allowed'
-              }`}
-            >
-              Create Website
-            </button>
-          </div>
-        </form>
-      </div>
+      <NewSiteForm domains={domains || []} />
     </div>
   )
 }

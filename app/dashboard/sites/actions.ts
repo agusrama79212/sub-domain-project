@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function checkAvailability(subdomain: string) {
+export async function checkAvailability(subdomain: string, rootDomain?: string) {
   // Regex to validate subdomain format: a-z, 0-9, -, 3-63 chars
   const isValidFormat = /^[a-z0-9]([a-z0-9-]{1,61}[a-z0-9])?$/.test(subdomain)
   if (!isValidFormat) {
@@ -25,11 +25,13 @@ export async function checkAvailability(subdomain: string) {
   }
 
   // Check existing sites
-  const { data: existing } = await supabase
-    .from('sites')
-    .select('subdomain')
-    .eq('subdomain', subdomain)
-    .single()
+  let query = supabase.from('sites').select('subdomain').eq('subdomain', subdomain)
+  
+  if (rootDomain) {
+    query = query.eq('root_domain', rootDomain)
+  }
+
+  const { data: existing } = await query.single()
 
   if (existing) {
     return { available: false, reason: 'Subdomain is already taken.' }
@@ -45,9 +47,10 @@ export async function createSite(formData: FormData) {
   if (!user) throw new Error('Not authenticated')
 
   const subdomain = formData.get('subdomain') as string
+  const rootDomain = formData.get('rootDomain') as string
   const title = formData.get('title') as string
 
-  const check = await checkAvailability(subdomain)
+  const check = await checkAvailability(subdomain, rootDomain)
   if (!check.available) {
     throw new Error(check.reason)
   }
@@ -57,6 +60,7 @@ export async function createSite(formData: FormData) {
     .insert({
       owner_id: user.id,
       subdomain,
+      root_domain: rootDomain,
       title,
       status: 'draft'
     })

@@ -43,7 +43,7 @@ export default async function EditSitePage({ params }: { params: Promise<{ id: s
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Edit Website</h1>
             <p className="text-zinc-500 mt-1 flex items-center">
               <Globe className="w-4 h-4 mr-1.5" />
-              {site.subdomain}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}
+              {site.subdomain}.{site.root_domain || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default async function EditSitePage({ params }: { params: Promise<{ id: s
         <div className="flex items-center space-x-3">
           {isPublished && (
             <a 
-              href={`http://${site.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}`}
+              href={`http://${site.subdomain}.${site.root_domain || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center px-4 py-2 bg-white border border-zinc-200 text-sm font-medium rounded-xl hover:bg-zinc-50 transition-colors shadow-sm"
@@ -60,12 +60,6 @@ export default async function EditSitePage({ params }: { params: Promise<{ id: s
               View Live
             </a>
           )}
-          <Link
-            href={`/dashboard/sites/${site.id}/settings`}
-            className="inline-flex items-center px-4 py-2 bg-white border border-zinc-200 text-sm font-medium rounded-xl hover:bg-zinc-50 transition-colors shadow-sm"
-          >
-            Settings
-          </Link>
           <form action={toggleStatusAction}>
             <button 
               type="submit"
