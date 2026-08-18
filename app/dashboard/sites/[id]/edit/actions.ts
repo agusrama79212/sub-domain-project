@@ -6,13 +6,17 @@ import { revalidatePath } from 'next/cache'
 export async function updateContent(siteId: string, formData: FormData) {
   const supabase = await createClient()
 
-  const heroTitle = formData.get('heroTitle') as string
-  const heroDescription = formData.get('heroDescription') as string
-  const ctaText = formData.get('ctaText') as string
-  const ctaLink = formData.get('ctaLink') as string
-  const bodyContent = formData.get('bodyContent') as string
+  const heroTitle = formData.get('heroTitle') as string || ''
+  const heroDescription = formData.get('heroDescription') as string || ''
+  const ctaText = formData.get('ctaText') as string || ''
+  const ctaLink = formData.get('ctaLink') as string || ''
+  const bodyContent = formData.get('bodyContent') as string || ''
+  const mode = formData.get('mode') as string || 'template'
+  const customCode = formData.get('customCode') as string || ''
 
   const contentJson = {
+    mode,
+    customCode,
     heroTitle,
     heroDescription,
     ctaText,

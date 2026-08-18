@@ -67,6 +67,16 @@ export default async function SitePage({ params }: { params: Promise<{ subdomain
   const siteContent = Array.isArray(content) ? content[0] : content;
   const contentData = siteContent?.content_json || {};
 
+  // If custom code mode is enabled, render the raw HTML directly
+  if (contentData.mode === 'custom' && contentData.customCode) {
+    return (
+      <div 
+        dangerouslySetInnerHTML={{ __html: contentData.customCode }} 
+        className="w-full h-full min-h-screen"
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-950 selection:bg-zinc-200">
       {/* Dynamic Content Rendering */}
